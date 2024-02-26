@@ -1,0 +1,18 @@
+syntax="proto3";
+
+service ImageProcessor {
+    rpc ProcessImage(stream ImageRequest) returns (stream ImageReturn) {}
+}
+
+message ImageRequest {
+    string image_ops = 1;
+    string image_type = 2;
+    bytes chunk_data = 5;
+}
+
+message ImageReturn {
+    string image_type = 1;
+    bytes img_chunk_data = 4;
+    string filename = 5;
+    string errors = 6;
+}
