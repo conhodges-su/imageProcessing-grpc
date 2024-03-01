@@ -32,7 +32,6 @@ class ImageProcessorServicer(image_pb2_grpc.ImageProcessorServicer):
             img_binary += request.chunk_data
             i += 1
         
-        
         # write the file to binary so processor class can read
         temp_filename = str(f"{uuid.uuid4()}.{img_type}")
         with open(temp_filename, 'wb') as outfile:

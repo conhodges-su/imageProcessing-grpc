@@ -7,12 +7,12 @@ service ImageProcessor {
 message ImageRequest {
     string image_ops = 1;
     string image_type = 2;
-    bytes chunk_data = 5;
+    bytes chunk_data = 3;
 }
 
 message ImageReturn {
     string image_type = 1;
-    bytes img_chunk_data = 4;
-    string filename = 5;
-    string errors = 6;
+    bytes img_chunk_data = 2;
+    string filename = 3;
+    string errors = 4;
 }

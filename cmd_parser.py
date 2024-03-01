@@ -86,7 +86,8 @@ class CmdParser():
         """
         ref: https://stackoverflow.com/questions/4566498/what-is-the-idiomatic-way-to-iterate-over-a-binary-file
         """
-        CHUNK_SIZE = 4096
+        str_cmds = "\n".join(self.cmds)
+        CHUNK_SIZE = 64 * 1024 # 64 KiB
         # send image to server in chunks
         try:
             with open(self.src,'rb') as f:
@@ -94,7 +95,7 @@ class CmdParser():
                     if not chunk:
                         break
                     img_request = image_pb2.ImageRequest(
-                        image_ops = self.cmds,
+                        image_ops = str_cmds,
                         image_type = self._img_type,
                         chunk_data = chunk)
                     yield img_request
@@ -114,6 +115,4 @@ class CmdParser():
         if length < 2:
             return None
         return chunks[length - 1]
-    
-
     

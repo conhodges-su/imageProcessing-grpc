@@ -28,7 +28,7 @@ ERROR_400 = 400
 HORIZ_FLIP = 1
 VERT_FLIP = 0
 DEGREES_MODULO = 360
-CHUNK_SIZE = 4096
+CHUNK_SIZE = 64 * 1024 # 64 KiB
 NEW_FILE_INCOMING = "NEW_FILE_INCOMING"
 
 def uuid_generator(filetype):
@@ -145,7 +145,7 @@ class ImageProcessor(IImageProcessor):
                     rotation = degrees % DEGREES_MODULO if degrees >= 0 else (-1 * ((-1 * degrees) % DEGREES_MODULO))
                     rotation *= -1
                 except ValueError as ve:
-                    errs.append((ERROR_400, f"'{cmd[1]}' is invalid rotation command"))
+                    errs.append((ERROR_400, f"'{cmd[1]}' is invalid rotation command. Only integers allowed"))
                     return imgs, errs
         except ValueError as ve:
             print(f"Error {ve}: could not read degree rotation, returning original")
@@ -213,8 +213,10 @@ class ImageProcessor(IImageProcessor):
     
 
     def _thumbnail_image(self, imgs, cmd, errs):
+        # TODO: only send the first one
          # get commands from the paramter
         try:
+            self._check_thumbnail_prescence(imgs)
             # new_size = (width, height), check dimensions
             new_size = (int(cmd[1]), int(cmd[2]))
             imgs['thumbnail'] = cv2.resize(imgs['img'], new_size)
@@ -234,6 +236,11 @@ class ImageProcessor(IImageProcessor):
             raise ValueError("Cannot resize/scale by more than 500%")
         elif percent < MINIMUM_PERCENT:
             raise ValueError("Cannot resize/scale by less than -95%")
+    
+
+    def _check_thumbnail_prescence(self, imgs):
+        if imgs['thumbnail'] is not None:
+            raise Exception("'thumbnail' call can only be called one time")
     
 
     def _convert_to_factor(self, percent):
