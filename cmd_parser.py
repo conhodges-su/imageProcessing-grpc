@@ -127,7 +127,7 @@ class CmdParser(ICmdParser):
                             response_dict['thumbnail'].append(f"client_{new_thumbnail_name[i]}")
                 # set it none if not included
                 else:
-                    response_dict['thumbnail'] = None
+                    response_dict['thumbnail'] = []
                 return response_dict          
         else:
             print(f"Error: Image file, {self.src}, is not a supported type or missing file extension")
