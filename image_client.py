@@ -13,18 +13,31 @@ import cmd_parser as cmd
 
 FILEPATH = "Nerd_Preview.png"
 if __name__ == "__main__":
-    cmd1 = "rotate 20"
+
+    # Prepare a list of commands (as strings)
+    cmd1 = "rotate 40"
     cmd2 = "thumbnail"
     cmd3 = "greyscale"
     cmd4 = "resize 10"
-    cmds = [cmd1, cmd2, cmd3, cmd4]
+    cmd5 = "flip vertical"
+    cmds = [cmd1, cmd2, cmd3, cmd4, cmd5]
+
+    # Create an instance of the CmdParser class, passing in the path to the file
+    # the commands, and the host/port combination of the ImageProcessing server
     new_cmd = cmd.CmdParser(FILEPATH, cmds, "localhost", 10760)
+
+    # Call `process_image() and retrieve the results`
     response = new_cmd.process_image()
     
+    # Print the contents of the response to the terminal
     print(f"img file: {response['img']}")
     print(f"thumbnail file: {response['thumbnail']}")
-    print(f"errors: {response['errors']}")
+    print(f"responses: {response['responses']}")
 
+
+    """
+    LIVE IMAGE DEMONSTRATION
+    """
     # print the image to screen
     # read image 
     image = cv2.imread(FILEPATH)
@@ -39,10 +52,12 @@ if __name__ == "__main__":
     cv2.waitKey(0)
 
     # show the thumbnails
+    i = 1
     for pic in response['thumbnail']:
         thumb = cv2.imread(pic)
-        cv2.imshow('thumbnail', thumb)
+        cv2.imshow(f'thumbnail{i}', thumb)
         cv2.waitKey(0)
+        i += 1
 
     # and finally destroy/close all open windows
     cv2.destroyAllWindows()
