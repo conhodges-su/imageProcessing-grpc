@@ -247,11 +247,9 @@ class ImageProcessor(IImageProcessor):
             factor = self._convert_to_factor(percent_change)
             imgs['img'] = cv2.resize(imgs['img'], None, fx=factor, fy=factor, interpolation=cv2.INTER_LINEAR)
         except ValueError as ve:
-            print(f"Error {ve}")
             errs.append((ERROR_400, ve))
             return imgs, errs
         except Exception as e:
-            print(f"Error encountered, stopping image conversion")
             errs.append((ERROR_400, e))
             return imgs, errs
         else:
@@ -271,11 +269,9 @@ class ImageProcessor(IImageProcessor):
             # imgs['thumbnail'] = cv2.resize(imgs['img'], new_size)
             imgs['thumbnail'].append(cv2.resize(imgs['img'], new_size))
         except ValueError as ve:
-            print(f"Error {ve}")
             errs.append((ERROR_400, ve))
             return imgs, errs
         except Exception as e:
-            print(f"Error encountered, stopping image conversion")
             errs.append((ERROR_400, e))
             return imgs, errs
         else:
