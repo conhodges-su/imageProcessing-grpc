@@ -91,18 +91,19 @@ class ImageProcessorServicer(image_pb2_grpc.ImageProcessorServicer):
         
         # delete the stored file
         os.remove(img)
-        
-        # send back an empty return to indicate next file being sent
-        img_return = image_pb2.ImageReturn(
-                        image_type = "",
-                        img_chunk_data = b"",
-                        filename = NEW_FILE_INCOMING,
-                        file_num = 0,
-                        errors = err_msg)
-        yield img_return
 
         # send back thumbnail(s), if any
         if len(thumbnails) != 0:
+                    
+            # send back an empty return to indicate next file being sent
+            img_return = image_pb2.ImageReturn(
+                            image_type = "",
+                            img_chunk_data = b"",
+                            filename = NEW_FILE_INCOMING,
+                            file_num = 0,
+                            errors = err_msg)
+            yield img_return
+
             for i in range(len(thumbnails)):
                 # Iterate over list of thumbnail images
                 try:
