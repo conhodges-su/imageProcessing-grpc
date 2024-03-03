@@ -11,9 +11,8 @@ Version: 1.0
 import cv2
 import cmd_parser as cmd
 
-FILEPATH = "Nerd_Preview.png"
-if __name__ == "__main__":
 
+def success_one():
     # Prepare a list of commands (as strings)
     cmd1 = "rotate 40"
     cmd2 = "thumbnail"
@@ -30,11 +29,76 @@ if __name__ == "__main__":
     response = new_cmd.process_image()
     
     # Print the contents of the response to the terminal
-    print(f"img file: {response['img']}")
-    print(f"thumbnail file: {response['thumbnail']}")
-    print(f"responses: {response['responses']}")
+    print("SCENARIO 1")
+    print_results(response)
+
+    show_images(response)
 
 
+def success_two():
+    # Prepare a list of commands (as strings)
+    cmd1 = "rotate 40"
+    cmd2 = "thumbnail"
+    cmd3 = "resize 100"
+    cmd4 = "flip vertical"
+    cmd5 = "thumbnail"
+    cmd6 = "greyscale"
+    cmd7 = "thumbnail"
+    cmds = [cmd1, cmd2, cmd3, cmd4, cmd5, cmd6, cmd7]
+
+    # Create an instance of the CmdParser class, passing in the path to the file
+    # the commands, and the host/port combination of the ImageProcessing server
+    new_cmd = cmd.CmdParser(FILEPATH, cmds, "localhost", 10760)
+
+    # Call `process_image() and retrieve the results`
+    response = new_cmd.process_image()
+    
+    # Print the contents of the response to the terminal
+    print("SCENARIO 2")
+    print_results(response)
+
+    show_images(response)
+
+
+def failure():
+    # Prepare a list of commands (as strings)
+    cmd1 = "rotate 40"
+    cmd2 = "hover"
+    cmd3 = "greyscale"
+    cmd4 = "resize -99"
+    cmd5 = "flip over"
+    cmds = [cmd1, cmd2, cmd3, cmd4, cmd5]
+
+    # Create an instance of the CmdParser class, passing in the path to the file
+    # the commands, and the host/port combination of the ImageProcessing server
+    new_cmd = cmd.CmdParser(FILEPATH, cmds, "localhost", 10760)
+
+    # Call `process_image() and retrieve the results`
+    response = new_cmd.process_image()
+    
+    # Print the contents of the response to the terminal
+    print("SCENARIO 3")
+    print_results(response)
+
+    show_images(response)
+
+def print_results(response):
+    print("---------------------------------------------------------------------")
+    print(f"img file: \n\t1.{response['img']}")
+
+    print("Thumbnail(s): ")
+    for i in range(len(response['thumbnail'])):
+        print(f"\t{i+1}. {response['thumbnail'][i]}")
+    
+    print("Response(s):")
+    for i in range(len(response['responses'])):
+        print(f"\t{i+1}. {response['responses'][i]}")
+    print("---------------------------------------------------------------------")
+    print()
+
+
+
+def show_images(response):
     """
     LIVE IMAGE DEMONSTRATION
     """
@@ -61,3 +125,11 @@ if __name__ == "__main__":
 
     # and finally destroy/close all open windows
     cv2.destroyAllWindows()
+
+
+FILEPATH = "Nerd_Preview.png"
+if __name__ == "__main__":
+
+    success_one()
+    success_two()
+    failure()
