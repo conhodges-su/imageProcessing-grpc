@@ -150,9 +150,10 @@ class ImageProcessor(IImageProcessor):
         try:
             # get commands from the paramter
             flip_type = cmd[1]
+            print(flip_type)
             if flip_type == HORIZONTAL:
                 flip_cmd = HORIZ_FLIP
-            elif flip_type == VERT_FLIP:
+            elif flip_type == VERTICAL:
                 flip_cmd = VERT_FLIP
             else:
                 raise TypeError(f"['{flip_type}'] invalid parameter. Usage: flip <horizontal/vertical>")
@@ -239,9 +240,7 @@ class ImageProcessor(IImageProcessor):
         try:
             percent_change = int(cmd[1])
             self._check_dimension(percent_change)
-            print(f"Change: {percent_change}")
             factor = self._convert_to_factor(percent_change)
-            print(f"Factor: {factor}")
             imgs['img'] = cv2.resize(imgs['img'], None, fx=factor, fy=factor, interpolation=cv2.INTER_LINEAR)
         except ValueError as ve:
             print(f"Error {ve}")
