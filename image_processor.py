@@ -41,7 +41,8 @@ HORIZ_FLIP = 1
 VERT_FLIP = 0
 DEGREES_MODULO = 360
 
-# Error codes
+# codes
+SUCCESS_200 = 200
 ERROR_400 = 400
 
 
@@ -103,6 +104,10 @@ class ImageProcessor(IImageProcessor):
                             thumbnail_name=[])
         for cmd in self._cmds:
             updated_imgs, errs = self._execute_cmd(updated_imgs, cmd, errs)
+        
+        # add a 200 response if no errors
+        if len(errs) == 0:
+            errs.append((SUCCESS_200, "Sucessfully processed image"))
         self._errs = errs
 
         # write img to file to use to stream back to client    
@@ -150,7 +155,6 @@ class ImageProcessor(IImageProcessor):
         try:
             # get commands from the paramter
             flip_type = cmd[1]
-            print(flip_type)
             if flip_type == HORIZONTAL:
                 flip_cmd = HORIZ_FLIP
             elif flip_type == VERTICAL:

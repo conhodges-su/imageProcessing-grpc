@@ -59,7 +59,7 @@ class CmdParser(ICmdParser):
         response_dict = dict(
             img="",
             thumbnail=[],
-            errors=[]
+            responses=[]
         )
         new_thumbnail = []
         new_thumbnail_name = []
@@ -103,17 +103,17 @@ class CmdParser(ICmdParser):
             except ValueError as ve:
                 response_dict['img'] = None
                 response_dict['thumbnail'] = None
-                response_dict['errors'] = ve
+                response_dict['responses'] = ve
                 return response_dict
             except Exception as e:
                 print(e)
                 response_dict['img'] = None
                 response_dict['thumbnail'] = None
-                response_dict['errors'] = "500, Unable to connect to server"
+                response_dict['responses'] = "500, Unable to connect to server"
                 return response_dict
             else:    
                 # save the errors to the dict
-                response_dict['errors'] = self.convert_to_list(error_msg)
+                response_dict['responses'] = self.convert_to_list(error_msg)
                 
                 # save the images to file
                 with open(f"client_{new_img_name}", 'wb') as outfile:
@@ -131,7 +131,7 @@ class CmdParser(ICmdParser):
                 return response_dict          
         else:
             print(f"Error: Image file, {self.src}, is not a supported type or missing file extension")
-            response_dict['errors'] = "400, invalid file type/missing extension"
+            response_dict['responses'] = "400, invalid file type/missing extension"
             return response_dict
     
 
