@@ -1,4 +1,5 @@
 import grpc
+import os
 import image_pb2
 import image_pb2_grpc
 
@@ -25,15 +26,23 @@ class CmdParser():
         host_port = self.host + ":" + str(self.port)
         new_img = b""
         new_img_name = b""
-        new_thumbnail = b""
-        new_thumbnail_name = b""
+        # new_thumbnail = b""
+        # new_thumbnail_name = b""
         error_msg = b""
         encountered_thumbnail = False
-        response_dict = {}
+        response_dict = dict(
+            img="",
+            thumbnail=[],
+            errors=[]
+        )
+        new_thumbnail = []
+        new_thumbnail_name = []
+        file_num = 0
 
         # connect to gRPC server and establish channel stub`
         if self._is_supported_img():
             try:
+                self._check_file_exists()
                 with grpc.insecure_channel(host_port) as channel:
                     # connect to server, transmit, and receive images
                     stub = image_pb2_grpc.ImageProcessorStub(channel)
@@ -42,10 +51,20 @@ class CmdParser():
                     # iterate through chunks to collect images and errors (if any)
                     for process in processed_img:
                         error_msg = process.errors
+                        file_num = process.file_num
+
                         # check if encountered sentinel to indicate to skip
-                        # this message frame
-                        if process.filename == NEW_FILE_INCOMING:
+                        # this message frame for image
+                        if process.filename == NEW_FILE_INCOMING and not encountered_thumbnail:
                             encountered_thumbnail = True
+                            new_thumbnail.append(b"")
+                            new_thumbnail_name.append(b"")
+                            continue
+
+                        # Skip message frame to process another thumbnail
+                        if process.filename == NEW_FILE_INCOMING:
+                            new_thumbnail.append(b"")
+                            new_thumbnail_name.append(b"")
                             continue
                         
                         # load images from the first image sent until thumbnail
@@ -53,25 +72,33 @@ class CmdParser():
                             new_img_name = process.filename
                             new_img += process.img_chunk_data
                         else: 
-                            new_thumbnail_name = process.filename
-                            new_thumbnail += process.img_chunk_data
-
+                            new_thumbnail_name[file_num] = process.filename
+                            new_thumbnail[file_num] += process.img_chunk_data
+            except ValueError as ve:
+                response_dict['img'] = None
+                response_dict['thumbnail'] = None
+                response_dict['errors'] = ve
+                return response_dict
             except Exception as e:
+                print(e)
+                response_dict['img'] = None
+                response_dict['thumbnail'] = None
                 response_dict['errors'] = "500, Unable to connect to server"
                 return response_dict
             else:    
                 # save the errors to the dict
-                response_dict['errors'] = error_msg
+                response_dict['errors'] = self.convert_to_list(error_msg)
                 
                 # save the images to file
                 with open(f"client_{new_img_name}", 'wb') as outfile:
                     outfile.write(new_img)
                     response_dict['img'] = f"client_{new_img_name}"
                 # save thumbnail    
-                if new_thumbnail_name:
-                    with open(f"client_{new_thumbnail_name}", 'wb') as outfile:
-                        outfile.write(new_thumbnail)
-                        response_dict['thumbnail'] = f"client_{new_thumbnail_name}"
+                if len(new_thumbnail_name) != 0:
+                    for i in range(len(new_thumbnail_name)):
+                        with open(f"client_{new_thumbnail_name[i]}", 'wb') as outfile:
+                            outfile.write(new_thumbnail[i])
+                            response_dict['thumbnail'].append(f"client_{new_thumbnail_name[i]}")
                 # set it none if not included
                 else:
                     response_dict['thumbnail'] = None
@@ -81,6 +108,10 @@ class CmdParser():
             response_dict['errors'] = "400, invalid file type/missing extension"
             return response_dict
     
+
+    def _check_file_exists(self):
+        if not os.path.isfile(self.src):
+            raise ValueError("404, file does not exist")
 
     def _transmit_img(self):
         """
@@ -115,4 +146,15 @@ class CmdParser():
         if length < 2:
             return None
         return chunks[length - 1]
+    
+
+    def convert_to_list(self, str_err):
+        if str_err == "":
+            return []
+        error_list = str_err.split("\n")
+        err_num = len(error_list)
+        # remove extra index due to split on newline adding additional line
+        if error_list[err_num - 1] == "":
+            error_list = error_list[:err_num - 1]
+        return error_list
     
