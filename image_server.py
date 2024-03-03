@@ -13,14 +13,16 @@ import image_pb2_grpc
 import image_processor as ip
 import os
 
+CHUNK_SIZE = 64 * 1024 # 64 KiB
+NEW_FILE_INCOMING = "NEW_FILE_INCOMING"
 
 
 def uuid_generator(filetype):
     return str(str(f"{uuid.uuid4()}.{filetype}"))
 
+
 class ImageProcessorServicer(image_pb2_grpc.ImageProcessorServicer):
     def ProcessImage(self, request_iterator, context):
-        print("received request")
         img_return = image_pb2.ImageReturn()
         img_binary = b''
         ops = ""
@@ -41,13 +43,89 @@ class ImageProcessorServicer(image_pb2_grpc.ImageProcessorServicer):
         img_proc = ip.ImageProcessor(temp_filename, ops, img_type)
 
         # process image and collect errors and names to transmit back
-        img_proc.process_image()
+        img, thumbs, errs, type = img_proc.process_image()
         # delete temporary file
         os.remove(temp_filename)
-        # print(errs)
 
         # return the images back to the client
-        yield from img_proc.transmit_img()
+        yield from self.transmit_img(img, thumbs, errs, type)
+    
+
+    def transmit_img(self, img, thumbnails, errs, type):
+        """
+        ref: https://stackoverflow.com/questions/4566498/what-is-the-idiomatic-way-to-iterate-over-a-binary-file
+        """
+        
+        # prepare error string
+        err_msg = self.error_string(errs)
+        # send updated image back to client
+        try:
+            with open(img,'rb') as f:
+                for chunk in iter(lambda: f.read(CHUNK_SIZE), b''):
+                    # print(chunk)
+                    if not chunk:
+                        break
+                    img_return = image_pb2.ImageReturn(
+                        image_type = type,
+                        img_chunk_data = chunk,
+                        filename = img,
+                        file_num = 0,
+                        errors = err_msg)
+                    yield img_return
+        except Exception as e:
+            print(e)
+        
+        # delete the stored file
+        os.remove(img)
+        
+        # send back an empty return to indicate next file being sent
+        img_return = image_pb2.ImageReturn(
+                        image_type = "",
+                        img_chunk_data = b"",
+                        filename = NEW_FILE_INCOMING,
+                        file_num = 0,
+                        errors = err_msg)
+        yield img_return
+
+        # send back thumbnail(s), if any
+        if len(thumbnails) != 0:
+            for i in range(len(thumbnails)):
+                # Iterate over list of thumbnail images
+                try:
+                    with open(thumbnails[i],'rb') as f:
+                        for chunk in iter(lambda: f.read(CHUNK_SIZE), b''):
+                            if not chunk:
+                                break
+                            img_return = image_pb2.ImageReturn(
+                                image_type = type,
+                                img_chunk_data = chunk,
+                                filename = thumbnails[i],
+                                file_num = i,
+                                errors = err_msg)
+                            yield img_return
+                except Exception as e:
+                    print("error happening during open")
+                
+                # if additional images to transmit, add indicator to stream
+                if i < len(thumbnails) - 1:
+                    img_return = image_pb2.ImageReturn(
+                                    image_type = "",
+                                    img_chunk_data = b"",
+                                    filename = NEW_FILE_INCOMING,
+                                    file_num = i + 1,
+                                    errors = err_msg)
+                    yield img_return
+                    
+                # delete the stored file
+                os.remove(thumbnails[i])
+
+    
+    def error_string(self, errs):
+        error_msg = ""
+        for err in errs:
+            error_msg += f"{err[0]}, {err[1]}\n"
+        return error_msg
+
 
 def serve():
     # setup server with up to 100 workers
