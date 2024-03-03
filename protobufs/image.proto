@@ -14,5 +14,6 @@ message ImageReturn {
     string image_type = 1;
     bytes img_chunk_data = 2;
     string filename = 3;
-    string errors = 4;
+    int32 file_num = 4;
+    string errors = 5;
 }
