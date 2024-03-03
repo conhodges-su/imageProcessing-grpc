@@ -1,7 +1,12 @@
-# ref: https://www.youtube.com/watch?v=WB37L7PjI5k&t=206s >>> grpc basics and client/server setup
 """
-IDEAS:
-- the stream needs to collect on requests into the image plus,
+ImageProcessorServicer inherits from the grpc ImageProcessorServicer that is
+auto generated from protoc. Handles receiving images from the client as well as
+transmitting them back to the client following imace processing.
+
+Author: Connor Hodges
+Date: Februrary-March 2024
+Institution: Seattle University
+Version: 1.0
 """
 
 from concurrent import futures
@@ -16,13 +21,20 @@ import os
 CHUNK_SIZE = 64 * 1024 # 64 KiB
 NEW_FILE_INCOMING = "NEW_FILE_INCOMING"
 
-
-def uuid_generator(filetype):
-    return str(str(f"{uuid.uuid4()}.{filetype}"))
-
-
 class ImageProcessorServicer(image_pb2_grpc.ImageProcessorServicer):
+    """
+    ImageProcessorServicer class inherits from the grpc auto generated code.
+    This class handles receiving from the client stub, passes the information
+    to an instance of the ImageProcessor class and finally streams it back to 
+    the client.
+    """
     def ProcessImage(self, request_iterator, context):
+        """
+        Method that receives an iterator from the client stub (streaming
+        request). The message is received/collected and passed to an instance
+        of the imageprocessor class. After processing the image is returned
+        back to the client.
+        """
         img_return = image_pb2.ImageReturn()
         img_binary = b''
         ops = ""
@@ -53,6 +65,8 @@ class ImageProcessorServicer(image_pb2_grpc.ImageProcessorServicer):
 
     def transmit_img(self, img, thumbnails, errs, type):
         """
+        Transmits the image(s) back to the client along with any errors and
+        thumbnail(s) that were requested.
         ref: https://stackoverflow.com/questions/4566498/what-is-the-idiomatic-way-to-iterate-over-a-binary-file
         """
         
@@ -121,6 +135,9 @@ class ImageProcessorServicer(image_pb2_grpc.ImageProcessorServicer):
 
     
     def error_string(self, errs):
+        """
+        Prepares a string of errors from a list of errors.
+        """
         error_msg = ""
         for err in errs:
             error_msg += f"{err[0]}, {err[1]}\n"
@@ -128,6 +145,10 @@ class ImageProcessorServicer(image_pb2_grpc.ImageProcessorServicer):
 
 
 def serve():
+    """
+    Serves the image_proccessing API using the ImageProcessorServicer stub as 
+    input for the grpc server.
+    """
     # setup server with up to 100 workers
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=100))
     # add ImageProcessorServer to the server to receive requests
